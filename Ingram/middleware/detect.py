@@ -18,6 +18,7 @@ DEV_HASH = {
     '89b932fcc47cf4ca3faadb0cfdef89cf': config.HIKVISION,
     'f066b751b858f75ef46536f5b357972b': config.CCTV,
     '1536f25632f78fb03babedcb156d3f69': config.UNIVIEW_NVR,
+    'fda7a4cb23cb936c5a85ccda6a48fb38': config.AIROS,   # airos
     'c30a692ad0d1324389485de06c96d9b8': 'uniview-dev',  # bugs
 }
 HEADERS = {'User-Agent': config.USERAGENT}
@@ -28,7 +29,8 @@ def device_detect(ip: str, port: str) -> str:
     """detect the device's fingerprint"""
     ip = f"{ip}:{port}"
     url_list = [
-        f"http://{ip}/favicon.ico",  # hikvision, cctv, uniview-nvr, dahua
+        f"http://{ip}/images/airos_logo.png",  # airos
+#        f"http://{ip}/favicon.ico",  # hikvision, cctv, uniview-nvr, dahua
         f"http://{ip}/image/lgbg.jpg",  # Dahua
         f"http://{ip}/skin/default_1/images/logo.png",  # uniview-dev
         f"http://{ip}",  # dlink
@@ -40,7 +42,12 @@ def device_detect(ip: str, port: str) -> str:
         try:
             r = requests.get(url, timeout=TIMEOUT, verify=False, headers=HEADERS)
             if r.status_code == 200:
+#                logger.info(f'Content variable r: {r.content}')
+#                logger.info(f'url variable r: {r.url}')
+                
                 hash_val = hashlib.md5(r.content).hexdigest()
+ #               logger.info(f'hash value: {hash_val}')
+
                 if hash_val in DEV_HASH:
                     device = DEV_HASH[hash_val]
                     return device
@@ -53,14 +60,32 @@ def device_detect(ip: str, port: str) -> str:
         if title:
             title = title[0].lower()
             if title == 'Tenda | login':
+                logger.info("TENDA")
                 return config.TENDA_W15E
-            if 'dvr' in title or 'xvr' in title or 'nvr' in title or 'hvr' in title:
+
+            # if title == 'Intelbras':
+            #     logger.info("INTELBRAS")
+            #     return config.DVR
+
+            if 'dvr' in title or 'xvr' in title or 'nvr' in title or 'hvr' in title or 'Intelbras' in title:
+                logger.info("DVR")
                 return config.DVR
+                
         if 'WWW-Authenticate' in r.headers:
             if 'realm="DCS' in r.headers.get('WWW-Authenticate'):
+                logger.info("DLINK_DCS")
                 return config.DLINK_DCS
     except Exception as e:
         logger.error(e)
+
+    # dahua
+    # try:
+    #     if port: 
+    #         port = '37777'
+    #         return config.DAHUA
+    # except Exception as e:
+    #     logger.error(e)
+    #     logger.info(f"{port} is DAHUA")
 
     # dvr
     try:
@@ -69,6 +94,7 @@ def device_detect(ip: str, port: str) -> str:
             return config.DVR
     except Exception as e:
         logger.error(e)
+        logger.info("Could not identify device")
 
     return config.NON_MATCH_DEV
 

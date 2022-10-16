@@ -33,6 +33,13 @@ class Scan:
                     device = device_detect(ip, port)
                     # get vul mods
                     mods = get_vul(device)
+                    logger.info(f'Device: {device}')
+                    if mods == None:
+                        logger.info(f'Not match any mapped vulnerability')
+                        vulnerable = False
+                        record.append((port, device))
+                        break
+
                     for mod in mods:
                         res = mod(f"{ip}:{port}")
                         if res[0]:
@@ -42,6 +49,7 @@ class Scan:
                             self.data.found_add()
                             self.data.vul_add(','.join(msg[:6]) + '\n')
                     if not vulnerable:
+                        logger.info(f'Not match any mapped vulnerability again')
                         record.append((port, device))
             
         except Exception as e:
